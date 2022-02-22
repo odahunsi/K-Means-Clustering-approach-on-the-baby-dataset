@@ -1,0 +1,165 @@
+library(dplyr)
+library(tidyr)
+library(factoextra)
+library(cluster)
+library(ggplot2)
+
+#----baby Cluster Analysis with K-Means Clustering
+#--------------------------------------------------------------------
+baby_cluster <- read.csv("babies.csv", header = TRUE)
+str(baby_cluster)
+summary(baby_cluster)
+range(baby_cluster$case)
+range(baby_cluster$bwt)
+range(baby_cluster$gestation)
+range(baby_cluster$parity)
+range(baby_cluster$age)
+range(baby_cluster$height)
+range(baby_cluster$weight)
+range(baby_cluster$smoke)
+
+#invalid <- na.omit(baby_cluster)
+#---------invalid data that with NA values are removed------------
+baby_cluster_cleaned <- na.omit(baby_cluster)
+
+head(baby_cluster_cleaned)
+dim(baby_cluster_cleaned)
+str(baby_cluster_cleaned)
+#Clustering Algorithm is able to cluster only on continuous variables
+#We have five (5) continuous variables and two (2) categorical variable
+#in the dataset; hence, we remove the two categorical variables in the 
+#dataset. Parity and smoke variable will be removed from the dataset.
+baby_cluster_cleaned <- baby_cluster_cleaned[,c(1,2,3,5,6,7)]
+
+head(baby_cluster_cleaned)
+dim(baby_cluster_cleaned)
+str(baby_cluster_cleaned)
+
+#Scaling the variables (Another method of Normalization)
+#Before Normalization, We have to remove the case value
+case<- baby_cluster_cleaned[,1]
+#head(case)
+baby_cluster_withoutCase <- baby_cluster_cleaned[,2:6]
+head(baby_cluster_withoutCase)
+
+withcase <- cbind(case, baby_cluster_cleaned)
+
+baby_cluster_scaled <- scale(baby_cluster_withoutCase)
+
+write.csv(baby_cluster_scaled, "baby_cluster_scaled.csv")
+
+
+head(baby_cluster_scaled)
+#case$baby_cluster_scaled<-case
+head(baby_cluster_scaled)
+dim(baby_cluster_scaled)
+str(baby_cluster_scaled)
+
+#baby_Rstudio <- cbind(case, baby_cluster_scaled)
+#write.csv(baby_cluster_scaled, "baby_Rstudio.csv")
+
+
+#pairs(baby_cluster_cleaned)
+pairs(baby_cluster_scaled)
+
+
+
+#-------Checking for relationships among data--------------------
+plot(bwt ~ gestation, data = baby_cluster_scaled) 
+        with(baby_cluster_cleaned, text(bwt ~ gestation, labels = case))
+
+plot(bwt ~ gestation, data = baby_cluster_scaled) 
+        with(baby_cluster_cleaned, text(bwt ~ gestation, labels = case, pos=4, cex=.6))
+
+plot(age ~ weight, data = baby_cluster_scaled) 
+        with(baby_cluster_cleaned, text(age ~ weight, labels = case, pos=4, cex=.6))
+
+
+
+
+#---Choosing the best value of K -----------
+k <- list()
+for (i in 1:2) {
+  k[[i]] <- kmeans(baby_cluster_scaled, i)
+}
+
+#---Checking the value of k-------
+print(k)
+
+#The higher the value of k, the higher variableness we have due to the 
+#large amount of dataset used.
+# Having 10 cluster makes the ratio between SumofSquares and 
+#TotalSumofSquares to be higher.
+
+#------Determining k-value with the silhouette function
+
+fviz_nbclust(baby_cluster_scaled, kmeans, method = 'silhouette')
+
+
+#-----Creating cluster into 2 categories ----------------------
+Cluster_results <- kmeans(baby_cluster_scaled,2)
+
+
+#------Checking the size of the clusters
+Cluster_results$size
+
+str(Cluster_results)
+
+#----Checking the output of the cluster -----------
+Cluster_results
+str(Cluster_results)
+
+#----Compare this with pair() used above----------
+#plot(New_baby_cluster, col = Cluster_results$cluster)
+pairs(baby_cluster_scaled, col = Cluster_results$cluster)
+plot(bwt ~ weight, data = baby_cluster_scaled, col = Cluster_results$cluster) 
+
+
+library(dplyr)
+library(tidyr)
+library(factoextra)
+fviz_cluster(Cluster_results, baby_cluster_scaled)
+
+#------Checking observations per cluster-----------------
+cluster_table <- table(Cluster_results$cluster)
+
+df <- data.frame(Cluster=c("Cluster 1", "Cluster 2"),
+                 proportion=c(cluster_table[1], cluster_table[2]), row.names = NULL)
+df %>%
+  ggplot(aes(x = as.factor(Cluster), y = proportion)) +
+  geom_bar(stat = "identity") +
+  ylab("Frequency") + xlab("Label") +theme_bw() + ggtitle("Observations per cluster")
+
+## Cluster Centroid
+centroid <- aggregate(baby_cluster_scaled, by=list(cluster=Cluster_results$cluster), mean)
+plot(centroid)
+
+
+barplot(c(cluster_table[1], cluster_table[2]),
+        names.arg = c("Cluster 1", "Cluster 2"),
+        xlab = "Label",
+        ylab = "Frequency",
+        col = rainbow(2)
+        )
+
+head(cluster_table)
+
+#We can plot the percentage against the number of clusters present
+
+
+betweenss_totss <- list()
+for (i in 1:10) {
+  betweenss_totss[[i]] <- k[[i]]$betweenss/k[[i]]$totss
+}
+
+plot(1:10, betweenss_totss, type = "b",
+     ylab = "Between SS / Total SS", xlab = "Clusters (k)")
+
+
+#---Cluster plots--------------------------
+
+for (i in 1:2) {
+  pairs(baby_cluster_scaled, col = k[[i]]$cluster)
+}
+
+#-----------------End of Clustering -------------
