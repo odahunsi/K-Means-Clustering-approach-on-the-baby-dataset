@@ -163,3 +163,45 @@ for (i in 1:2) {
 }
 
 #-----------------End of Clustering -------------
+
+
+#-----Cluster Visualization-------------
+#clusplot(New_baby_cluster, Cluster_results$cluster, color = TRUE, shade = TRUE, lines = 0)
+
+clusplot(baby_cluster_scaled, Cluster_results$cluster, color = TRUE, shade = TRUE, lines = 0)
+
+clusplot(baby_cluster_scaled, Cluster_results2$cluster, color = TRUE, shade = TRUE, lines = 0)
+
+clusplot(baby_cluster_scaled, Cluster_results4$cluster, color = TRUE, shade = TRUE, lines = 0)
+
+
+tendency <- get_clust_tendency(baby_cluster_scaled, 20, graph = TRUE)
+tendency
+
+#-------choosing distance method and create distance matrix
+
+#distance <- dist(New_baby_cluster, method = "manhattan")
+
+Euc_distance <- dist(baby_cluster_scaled, method = "euclidean")
+
+head(print(Euc_distance, digits=3))
+head(Euc_distance)
+tail(distance)
+summary(Euc_distance)
+str(Euc_distance)
+
+
+
+install.packages("factoextra")
+library(factoextra)
+fviz_dist(Euc_distance)
+
+
+head(baby_cluster_scaled)
+
+#----Hierarchical Clustering
+baby_cluster_scaled.hclust <- hclust(Euc_distance)
+baby_cluster_scaled.hclust
+
+
+plot(baby_cluster_scaled.hclust)
